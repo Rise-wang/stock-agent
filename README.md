@@ -5,6 +5,8 @@ A-share daily review agent toolkit built around AkShare public data sources.
 ## Features
 
 - Generate daily Markdown and JSON data packages for a configurable watchlist.
+- Add relative-strength metrics and candidate labels for rebound/continuation screening.
+- Optionally enrich reports with Eastmoney individual fund-flow and stock-news data.
 - Monitor intraday abnormal moves with one-line `ALERT`/`OK` output.
 - Run a Backtrader moving-average crossover backtest.
 - Validate generated daily report data before review.
@@ -34,6 +36,23 @@ Edit `config/watchlist.json`:
 }
 ```
 
+Optionally enrich attribution with `config/stock_profiles.json`:
+
+```json
+{
+  "profiles": {
+    "600519": {
+      "industry": "白酒",
+      "industry_aliases": ["酿酒"],
+      "concepts": ["消费"],
+      "keywords": ["高端白酒"]
+    }
+  }
+}
+```
+
+Profiles are used for industry matching, hot-topic keyword expansion, and cleaner attribution. Missing profiles are reported as warnings, not hard errors.
+
 You can also override it for one run:
 
 ```bash
@@ -52,6 +71,18 @@ Generate and validate a daily report:
 
 ```bash
 ./scripts/run_daily_review.sh 20240719
+```
+
+Optional Eastmoney enrichment is enabled by default for fund flow and stock news. For the latest trade date, fund flow uses the more reliable all-stock snapshot by default; for historical trade dates it uses the individual daily fund-flow source when available. Disable Eastmoney enrichment when the upstream source is unstable:
+
+```bash
+STOCK_ENABLE_EASTMONEY=0 ./scripts/run_daily_review.sh 20240719
+```
+
+Try the detailed individual daily fund-flow source for the latest trade date:
+
+```bash
+STOCK_FUND_FLOW_DETAIL=1 ./scripts/run_daily_review.sh
 ```
 
 Run intraday monitoring:
@@ -80,13 +111,20 @@ Generated reports are written to `reports/` and ignored by git:
 - `reports/report_YYYYMMDD.json`
 - `reports/review_YYYYMMDD.md` when a review is saved
 
+The JSON stock blocks include:
+
+- `relative_strength`: 5/10/20-day returns, market/industry relative strength, close position, and volume/amount expansion.
+- `candidate_signal`: a screening label such as `稳健修复`, `强势接力`, `跌深反抽`, or `弱势待确认`, plus supporting facts and risk flags.
+- `fund_flow`: Eastmoney fund-flow status. Latest-date snapshot includes net inflow/inflow/outflow; detailed daily source includes main/super-large/large/medium/small order flow when available.
+- `news`: Eastmoney stock-news status and recent items filtered to the report trade date or earlier.
+
 See `examples/` for a shortened sample report.
 
 ## Data Sources
 
-The default scripts avoid Eastmoney endpoints because they were unreliable in the target environment. Current defaults use AkShare wrappers around Sina, Tonghuashun, and Tencent public data sources where available.
+The default scripts use AkShare wrappers around Sina, Tonghuashun, Tencent, and optional Eastmoney public data sources where available.
 
-Unavailable fields such as non-Eastmoney individual fund flow and stock-specific news are explicitly marked as unsupported, and review workflows must not infer causes from missing data.
+Eastmoney enrichment is best-effort. If fund flow or stock news fails, the JSON status is marked explicitly and review workflows must not infer causes from missing data.
 
 ## Daily Review Skill
 

@@ -12,6 +12,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 
 import alert_watch
 import backtest_run
+import daily_report
 import validate_report
 import watchlist_config
 
@@ -93,14 +94,116 @@ class ValidateReportTest(unittest.TestCase):
                 "name": "贵州茅台",
                 "daily": {"status": "ok"},
                 "recent_5d": [{"date": str(i)} for i in range(5)],
+                "relative_strength": {"status": "ok"},
+                "candidate_signal": {"status": "ok"},
+                "profile": {"status": "watchlist_only"},
+                "industry": {"status": "missing"},
+                "fund_flow": {"status": "ok"},
+                "news": {"status": "empty", "items": []},
+            }],
+        }
+        errors, warnings = validate_report.check_report(data)
+        self.assertEqual(errors, [])
+        self.assertNotIn("贵州茅台(600519) profile missing", warnings)
+        self.assertNotIn("贵州茅台(600519) fund flow unavailable", warnings)
+        self.assertNotIn("贵州茅台(600519) news unavailable", warnings)
+
+    def test_check_report_warns_failed_enrichment(self):
+        data = {
+            "trade_date": "20240719",
+            "indexes": [{"status": "ok"}, {"status": "ok"}, {"status": "ok"}],
+            "sectors": {"status": "ok", "top": [{"name": "半导体"}], "bottom": [{"name": "电力"}]},
+            "stocks": [{
+                "code": "600519",
+                "name": "贵州茅台",
+                "daily": {"status": "ok"},
+                "recent_5d": [{"date": str(i)} for i in range(5)],
+                "relative_strength": {"status": "ok"},
+                "candidate_signal": {"status": "ok"},
+                "profile": {"status": "watchlist_only"},
+                "industry": {"status": "missing"},
                 "fund_flow": {"status": "failed"},
-                "news": [],
+                "news": {"status": "failed", "items": []},
             }],
         }
         errors, warnings = validate_report.check_report(data)
         self.assertEqual(errors, [])
         self.assertIn("贵州茅台(600519) fund flow unavailable", warnings)
         self.assertIn("贵州茅台(600519) news unavailable", warnings)
+
+    def test_check_report_accepts_legacy_news_list(self):
+        data = {
+            "trade_date": "20240719",
+            "indexes": [{"status": "ok"}, {"status": "ok"}, {"status": "ok"}],
+            "sectors": {"status": "ok", "top": [{"name": "半导体"}], "bottom": [{"name": "电力"}]},
+            "stocks": [{
+                "code": "600519",
+                "name": "贵州茅台",
+                "daily": {"status": "ok"},
+                "recent_5d": [{"date": str(i)} for i in range(5)],
+                "relative_strength": {"status": "ok"},
+                "candidate_signal": {"status": "ok"},
+                "profile": {"status": "watchlist_only"},
+                "industry": {"status": "missing"},
+                "fund_flow": {"status": "disabled"},
+                "news": [{"title": "测试新闻"}],
+            }],
+        }
+        errors, warnings = validate_report.check_report(data)
+        self.assertEqual(errors, [])
+        self.assertNotIn("贵州茅台(600519) news unavailable", warnings)
+
+
+class DailyReportMetricsTest(unittest.TestCase):
+    def test_build_relative_metrics(self):
+        hist = pd.DataFrame([
+            {"涨跌幅": 1.0, "收盘": 10.0, "成交额": 100.0, "成交量": 10.0},
+            {"涨跌幅": 2.0, "收盘": 10.2, "成交额": 100.0, "成交量": 10.0},
+            {"涨跌幅": -1.0, "收盘": 10.1, "成交额": 100.0, "成交量": 10.0},
+            {"涨跌幅": 3.0, "收盘": 10.4, "成交额": 100.0, "成交量": 10.0},
+            {"涨跌幅": 0.5, "收盘": 10.45, "成交额": 150.0, "成交量": 12.0},
+        ])
+        row = hist.iloc[-1]
+        metrics = daily_report.build_relative_metrics(hist, row, market_pct=-1.0, industry_pct=-0.5)
+        self.assertEqual(metrics["status"], "ok")
+        self.assertAlmostEqual(metrics["vs_market_pct"], 1.5)
+        self.assertAlmostEqual(metrics["vs_industry_pct"], 1.0)
+        self.assertAlmostEqual(metrics["amount_vs_5d_avg_pct"], 50.0)
+        self.assertAlmostEqual(metrics["close_position_5d"], 1.0)
+
+    def test_classify_candidate_stable_rebound(self):
+        daily = {"status": "ok", "pct_change": -0.5, "turnover": 2.0, "amplitude": 4.0}
+        metrics = {
+            "status": "ok",
+            "return_5d": 2.0,
+            "prev_4d_return": 2.5,
+            "close_position_5d": 0.8,
+            "vs_market_pct": 1.7,
+            "amount_vs_5d_avg_pct": 10.0,
+        }
+        signal = daily_report.classify_candidate("测试股份", daily, metrics, {"hit": False})
+        self.assertEqual(signal["style"], "稳健修复")
+        self.assertGreater(signal["score"], 0)
+
+    def test_parse_cn_money(self):
+        self.assertEqual(daily_report.parse_cn_money("1.25亿"), 125000000.0)
+        self.assertEqual(daily_report.parse_cn_money("-252.21万"), -2522100.0)
+        self.assertIsNone(daily_report.parse_cn_money("-"))
+
+    def test_fund_flow_from_rank(self):
+        df = pd.DataFrame([{
+            "股票代码": "2498",
+            "股票简称": "汉缆股份",
+            "流入资金": "2.09亿",
+            "流出资金": "2.76亿",
+            "净额": "-6717.42万",
+            "成交额": "4.85亿",
+        }])
+        payload = daily_report.fund_flow_from_rank("002498", "20260724", df)
+        self.assertEqual(payload["status"], "ok")
+        self.assertEqual(payload["source"], "东方财富 stock_fund_flow_individual 即时排名")
+        self.assertAlmostEqual(payload["net_inflow"], -67174200.0)
+        self.assertAlmostEqual(payload["net_inflow_pct"], -13.850350515463917)
 
 
 if __name__ == "__main__":

@@ -58,10 +58,28 @@ def check_report(data):
             errors.append(f"{name}({code}) daily quote missing")
         if len(stock.get("recent_5d") or []) < 5:
             warnings.append(f"{name}({code}) recent_5d incomplete")
+        relative = stock.get("relative_strength") or {}
+        if daily.get("status") == "ok" and relative.get("status") != "ok":
+            warnings.append(f"{name}({code}) relative strength unavailable")
+        signal = stock.get("candidate_signal") or {}
+        if daily.get("status") == "ok" and signal.get("status") != "ok":
+            warnings.append(f"{name}({code}) candidate signal unavailable")
+        profile = stock.get("profile") or {}
+        industry = stock.get("industry") or {}
+        if profile.get("status") not in ("ok", "watchlist_only"):
+            warnings.append(f"{name}({code}) profile missing")
+        elif profile.get("industry") and industry.get("status") != "ok":
+            warnings.append(f"{name}({code}) industry snapshot unmatched")
         fund_flow = stock.get("fund_flow") or {}
-        if fund_flow.get("status") != "ok":
+        if fund_flow.get("status") not in ("ok", "disabled"):
             warnings.append(f"{name}({code}) fund flow unavailable")
-        if not stock.get("news"):
+        news = stock.get("news")
+        if isinstance(news, list):
+            news_ok = bool(news)
+        else:
+            news = news or {}
+            news_ok = news.get("status") in ("ok", "empty", "disabled")
+        if not news_ok:
             warnings.append(f"{name}({code}) news unavailable")
 
     return errors, warnings
