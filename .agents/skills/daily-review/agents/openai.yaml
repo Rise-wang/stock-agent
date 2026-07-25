@@ -1,0 +1,3 @@
+display_name: Daily Review
+short_description: Run and analyze the stock-agent daily review workflow.
+default_prompt: 执行每日复盘

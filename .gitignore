@@ -1,0 +1,11 @@
+.DS_Store
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.venv/
+venv/
+logs/*.log
+reports/report_*.md
+reports/report_*.json
+reports/review_*.md

@@ -1,0 +1,6 @@
+# 示例: A 股交易日盘中每 5 分钟监控一次,收盘后生成日报数据包。
+# 自选股默认读取 config/watchlist.json,也可设置 STOCK_WATCHLIST 或 STOCK_WATCHLIST_FILE。
+# 安装前先把 /Users/risemini/agents/stock-agent 改成你的实际项目目录。
+
+*/5 9-11,13-14 * * 1-5 cd /Users/risemini/agents/stock-agent && python3 scripts/alert_watch.py >> logs/alert_watch.log 2>&1
+10 15 * * 1-5 cd /Users/risemini/agents/stock-agent && ./scripts/run_daily_review.sh >> logs/daily_review.log 2>&1
