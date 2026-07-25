@@ -24,6 +24,15 @@ def normalize_code(code):
     return code
 
 
+def market_prefix(code):
+    code = normalize_code(code)
+    if code.startswith(("5", "6")):
+        return "sh"
+    if code.startswith(("8", "9")):
+        return "bj"
+    return "sz"
+
+
 def parse_watchlist_text(raw):
     """Parse CODE:NAME pairs, e.g. 600519:贵州茅台,300750:宁德时代."""
     result = {}

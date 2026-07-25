@@ -25,7 +25,7 @@ import datetime as dt
 import pandas as pd
 import akshare as ak
 
-from watchlist_config import DEFAULT_WATCHLIST, load_watchlist
+from watchlist_config import DEFAULT_WATCHLIST, load_watchlist, market_prefix
 
 # ============================================================
 # 配置区
@@ -113,7 +113,7 @@ def row_value(row, key):
 
 
 def market_symbol(code):
-    return ("sh" if code.startswith(("6", "9")) else "sz") + code
+    return market_prefix(code) + code
 
 
 def stock_daily_sina(code, start, end):

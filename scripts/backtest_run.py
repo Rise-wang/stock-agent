@@ -20,6 +20,8 @@ import akshare as ak
 import backtrader as bt
 import pandas as pd
 
+from watchlist_config import market_prefix
+
 
 REQUEST_INTERVAL = 0.5
 
@@ -58,7 +60,7 @@ class MovingAverageCrossStrategy(bt.Strategy):
 def fetch_daily_data(symbol, start, end, adjust):
     last_exc = None
     df = None
-    market_symbol = ("sh" if symbol.startswith(("6", "9")) else "sz") + symbol
+    market_symbol = market_prefix(symbol) + symbol
     for attempt in range(1, 4):
         try:
             time.sleep(REQUEST_INTERVAL * attempt)

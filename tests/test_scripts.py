@@ -49,6 +49,11 @@ class WatchlistConfigTest(unittest.TestCase):
             {"600519": "贵州茅台"},
         )
 
+    def test_market_prefix(self):
+        self.assertEqual(watchlist_config.market_prefix("560860"), "sh")
+        self.assertEqual(watchlist_config.market_prefix("920809"), "bj")
+        self.assertEqual(watchlist_config.market_prefix("002498"), "sz")
+
 
 class BacktestRunTest(unittest.TestCase):
     def test_invalid_params(self):

@@ -26,7 +26,7 @@ import time
 import akshare as ak
 import pandas as pd
 
-from watchlist_config import DEFAULT_WATCHLIST, load_watchlist, parse_watchlist_text
+from watchlist_config import DEFAULT_WATCHLIST, load_watchlist, market_prefix, parse_watchlist_text
 
 
 REQUEST_INTERVAL = 0.5
@@ -46,12 +46,32 @@ def fetch_spot_quotes():
     df = retry(lambda: ak.stock_zh_a_spot_tx(), "腾讯实时行情")
     if df is None or df.empty:
         raise RuntimeError("实时行情接口返回空数据")
-    return pd.DataFrame({
+    stock_df = pd.DataFrame({
         "代码": df["code"].astype(str).str[-6:].str.zfill(6),
         "名称": df["name"],
         "最新价": pd.to_numeric(df["zxj"], errors="coerce"),
         "涨跌幅": pd.to_numeric(df["zdf"], errors="coerce"),
         "量比": pd.to_numeric(df["lb"], errors="coerce"),
+    })
+    etf_df = fetch_etf_quotes()
+    if etf_df is not None and not etf_df.empty:
+        return pd.concat([stock_df, etf_df], ignore_index=True)
+    return stock_df
+
+
+def fetch_etf_quotes():
+    try:
+        df = retry(lambda: ak.fund_etf_spot_ths(), "同花顺 ETF 行情", attempts=1)
+    except Exception:
+        return None
+    if df is None or df.empty:
+        return None
+    return pd.DataFrame({
+        "代码": df["基金代码"].astype(str).str.zfill(6),
+        "名称": df["基金名称"],
+        "最新价": pd.to_numeric(df["最新-单位净值"], errors="coerce"),
+        "涨跌幅": pd.to_numeric(df["增长率"], errors="coerce"),
+        "量比": pd.Series([None] * len(df), dtype="float64"),
     })
 
 
@@ -109,7 +129,7 @@ def fetch_hist_quote(code, end_date):
     end_day = parse_yyyymmdd(end_date) if end_date else dt.date.today()
     end = end_day.strftime("%Y%m%d")
     start = (end_day - dt.timedelta(days=45)).strftime("%Y%m%d")
-    symbol = ("sh" if code.startswith(("6", "9")) else "sz") + code
+    symbol = market_prefix(code) + code
     df = retry(lambda: ak.stock_zh_a_daily(
         symbol=symbol, start_date=start, end_date=end, adjust="qfq"), f"{code} 新浪日线")
     df = df.rename(columns={
