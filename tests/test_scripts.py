@@ -3,6 +3,7 @@
 
 import pathlib
 import sys
+import tempfile
 import unittest
 
 import pandas as pd
@@ -13,6 +14,7 @@ sys.path.insert(0, str(ROOT / "scripts"))
 import alert_watch
 import backtest_run
 import daily_report
+import send_email
 import validate_report
 import watchlist_config
 
@@ -204,6 +206,35 @@ class DailyReportMetricsTest(unittest.TestCase):
         self.assertEqual(payload["source"], "东方财富 stock_fund_flow_individual 即时排名")
         self.assertAlmostEqual(payload["net_inflow"], -67174200.0)
         self.assertAlmostEqual(payload["net_inflow_pct"], -13.850350515463917)
+
+
+class SendEmailTest(unittest.TestCase):
+    def test_missing_settings(self):
+        missing = send_email.missing_settings({"smtp_host": "smtp.qq.com"})
+        self.assertIn("smtp_user", missing)
+        self.assertIn("smtp_password", missing)
+
+    def test_qq_host_default(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            path = pathlib.Path(tmp) / "email.local.json"
+            path.write_text(
+                '{"smtp_user":"407473978@qq.com","smtp_password":"token","smtp_from":"407473978@qq.com"}',
+                encoding="utf-8",
+            )
+            settings = send_email.load_settings(path)
+        self.assertEqual(settings["smtp_host"], "smtp.qq.com")
+        self.assertEqual(send_email.missing_settings(settings), [])
+
+    def test_build_message(self):
+        msg = send_email.build_message(
+            "sender@example.com",
+            ["to@example.com"],
+            "测试主题",
+            "正文",
+        )
+        self.assertEqual(msg["From"], "sender@example.com")
+        self.assertEqual(msg["To"], "to@example.com")
+        self.assertEqual(msg["Subject"], "测试主题")
 
 
 if __name__ == "__main__":

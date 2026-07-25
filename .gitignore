@@ -6,6 +6,8 @@ __pycache__/
 .venv/
 venv/
 logs/*.log
+config/email.local.json
 reports/report_*.md
 reports/report_*.json
 reports/review_*.md
+reports/email_digest_*.md

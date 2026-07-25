@@ -1,0 +1,10 @@
+{
+  "smtp_host": "smtp.qq.com",
+  "smtp_port": 465,
+  "smtp_ssl": true,
+  "smtp_starttls": false,
+  "smtp_user": "your@qq.com",
+  "smtp_password": "your-smtp-authorization-code",
+  "smtp_from": "your@qq.com",
+  "default_to": "407473978@qq.com"
+}

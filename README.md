@@ -85,6 +85,18 @@ Try the detailed individual daily fund-flow source for the latest trade date:
 STOCK_FUND_FLOW_DETAIL=1 ./scripts/run_daily_review.sh
 ```
 
+Send a report by authenticated SMTP:
+
+```bash
+cp config/email.example.json config/email.local.json
+# Edit config/email.local.json with your sender address and SMTP authorization code.
+python3 scripts/send_email.py \
+  --subject "每日股票与热点复盘 2026-07-25" \
+  --body-file reports/email_digest_20260725.md
+```
+
+For QQ Mail, enable SMTP in mailbox settings and use the generated authorization code as `smtp_password`. The local `mail` command may be rejected by public mail providers because it sends from a local hostname such as `*.local`.
+
 Run intraday monitoring:
 
 ```bash

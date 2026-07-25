@@ -20,7 +20,7 @@ validate:
 	python3 scripts/validate_report.py $(REPORT)
 
 test:
-	PYTHONPYCACHEPREFIX=/private/tmp/pycache-stock-agent python3 -m py_compile scripts/daily_report.py scripts/alert_watch.py scripts/backtest_run.py scripts/validate_report.py scripts/watchlist_config.py
+	PYTHONPYCACHEPREFIX=/private/tmp/pycache-stock-agent python3 -m py_compile scripts/daily_report.py scripts/alert_watch.py scripts/backtest_run.py scripts/validate_report.py scripts/watchlist_config.py scripts/send_email.py
 	python3 -m unittest tests/test_scripts.py
 
 alert:
