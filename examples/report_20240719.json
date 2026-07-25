@@ -1,0 +1,69 @@
+{
+  "trade_date": "20240719",
+  "generated_at": "2026-07-25 13:20",
+  "watchlist": [
+    {
+      "code": "600519",
+      "name": "贵州茅台"
+    },
+    {
+      "code": "300750",
+      "name": "宁德时代"
+    }
+  ],
+  "indexes": [
+    {
+      "code": "sh000001",
+      "name": "上证指数",
+      "status": "ok",
+      "close": 2982.309,
+      "pct_change": 0.173858541086358
+    }
+  ],
+  "sectors": {
+    "status": "ok",
+    "source": "同花顺",
+    "top": [
+      {
+        "name": "半导体",
+        "pct_change": -0.1
+      }
+    ],
+    "bottom": [
+      {
+        "name": "贵金属",
+        "pct_change": -6.01
+      }
+    ]
+  },
+  "stocks": [
+    {
+      "code": "600519",
+      "name": "贵州茅台",
+      "daily": {
+        "status": "ok",
+        "close": 1415.1,
+        "pct_change": 1.8768493121098961,
+        "amount": 5888615145.0
+      },
+      "recent_5d": [
+        {
+          "date": "20240719",
+          "pct_change": 1.8768493121098961,
+          "close": 1415.1
+        }
+      ],
+      "fund_flow": {
+        "status": "unsupported",
+        "reason": "未配置非东方财富资金流数据源"
+      },
+      "industry": null,
+      "lhb": {
+        "hit": false,
+        "reasons": []
+      },
+      "news": []
+    }
+  ],
+  "disclaimer": "以下为脚本抓取的公开数据,标注获取失败的项请在分析时忽略,不要臆测。"
+}
